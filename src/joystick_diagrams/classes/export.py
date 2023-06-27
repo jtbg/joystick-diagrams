@@ -1,5 +1,4 @@
 from os import path
-import os
 from pathlib import Path
 import re
 import html
@@ -12,9 +11,9 @@ _logger = logging.getLogger(__name__)
 
 
 class Export:
-    def __init__(self, joystick_listing, parser_id="UNKNOWN"):  # pylint disable=too-many-instance-attributes
-        self.export_directory = "./diagrams/"
-        self.templates_directory = "./templates/"
+    def __init__(self, joystick_listing: dict, parser_id: str = "UNKNOWN"):
+        self.export_directory = Path("./diagrams/")
+        self.templates_directory = Path("./templates/")
         self.file_name_divider = "_"
         self.joystick_listing = joystick_listing
         self.export_progress = None
@@ -22,7 +21,7 @@ class Export:
         self.executor = parser_id
         self.error_bucket = []
 
-    def export_config(self, progress_bar=None) -> list:
+    def export_config(self, progress_bar: QtWidgets.QProgressBar = None) -> list:
         """
         Manipulates stored templates, and replaces strings with actual values.
 
@@ -64,22 +63,20 @@ class Export:
             progress_bar.setValue(100)
         return self.error_bucket
 
-    def get_template(self, joystick):
+    def get_template(self, joystick: str) -> Optional[str]:
         joystick = joystick.strip()
-        if path.exists(self.templates_directory + joystick + ".svg"):
-            data = Path(os.path.join(self.templates_directory, joystick + ".svg")).read_text(encoding="utf-8")
+        template_path = self.templates_directory / f"{joystick}.svg"
+        if template_path.exists():
+            data = template_path.read_text(encoding="utf-8")
             return data
-        return False
+        return None
 
-    def save_template(self, joystick, mode, template):
-        output_path = self.export_directory + self.executor + "_" + joystick.strip() + "_" + mode + ".svg"
-
+    def save_template(self, joystick: str, mode: str, template: str) -> None:
+        output_path = self.export_directory / f"{self.executor}_{joystick.strip()}_{mode}.svg"
         helper.create_directory(self.export_directory)
-
         try:
-            outputfile = open(output_path, "w", encoding="UTF-8")
-            outputfile.write(template)
-            outputfile.close()
+            with open(output_path, "w", encoding="UTF-8") as outputfile:
+                outputfile.write(template)
         except PermissionError as e:
             _logger.error(e)
             raise
